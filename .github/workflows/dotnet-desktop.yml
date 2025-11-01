@@ -1,14 +1,14 @@
-# Workflow Name
+#Workflow name
 name: .NET Build and Test
 
 on:
-  # Task 2: Triggers on push or pull request (Webhook)
+  #Triggers on push or pull request (Webhook)
   push:
     branches: [ "main", "master" ]
   pull_request:
     branches: [ "main", "master" ]
 
-  # Task 1: Manual trigger (Run by button)
+  #Manual trigger (Run by button)
   workflow_dispatch:
 
 jobs:
@@ -21,20 +21,16 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        # Переконайтеся, що тут ваша версія .NET (напр. 8.0.x або 6.0.x)
         dotnet-version: '8.0.x' 
 
-    # === ВИПРАВЛЕНО ===
-    # Вказуємо точний шлях до .sln файлу
+    #.sln file path
     - name: Restore dependencies
       run: dotnet restore UserApi/UserApi.sln
 
-    # === ВИПРАВЛЕНО ===
-    # Вказуємо точний шлях до .sln файлу
+    #Build with .sln file path
     - name: Build
       run: dotnet build UserApi/UserApi.sln --no-restore
 
-    # === ВИПРАВЛЕНО ===
-    # Вказуємо точний шлях до .sln файлу
+    #Test with .sln file path
     - name: Test
       run: dotnet test UserApi/UserApi.sln --no-build --verbosity normal
