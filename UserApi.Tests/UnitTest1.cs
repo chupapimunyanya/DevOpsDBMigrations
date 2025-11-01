@@ -33,15 +33,5 @@ namespace UserApi.Tests
             Assert.Equal(expected, actual);
         }
 
-
-        [Fact]
-        public void WrongTest_ReturnsWrongString()
-        {
-            string str1 = "Hello, ";
-            string str2 = "World!";
-            string expected = "Bye, World!";
-            string actual = str1 + str2;
-            Assert.Equal(expected, actual);
-        }
     }
 }
