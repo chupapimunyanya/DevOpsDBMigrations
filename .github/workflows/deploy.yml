@@ -1,0 +1,41 @@
+name: "2. Deploy App"
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+env:
+  AWS_REGION: eu-central-1
+  ECR_REPO_NAME: userapi-repo
+  CLUSTER_NAME: userapi-dev-cluster 
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+    - name: Build and Push Docker Image
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        IMAGE_TAG: ${{ github.sha }}
+      run: |
+        docker build -t $ECR_REGISTRY/$ECR_REPO_NAME:$IMAGE_TAG -f UserApi/Dockerfile UserApi/
+        docker push $ECR_REGISTRY/$ECR_REPO_NAME:$IMAGE_TAG
+        echo "image_uri=$ECR_REGISTRY/$ECR_REPO_NAME:$IMAGE_TAG" >> $GITHUB_ENV
+    - name: Update Kubeconfig
+      run: aws eks update-kubeconfig --name ${{ env.CLUSTER_NAME }} --region ${{ env.AWS_REGION }}
+    - name: Deploy to K8s
+      run: |
+        kubectl create secret generic db-secret \
+          --from-literal=connection-string="Host=${{ secrets.DB_HOST }};Database=userapidb;Username=postgres;Password=${{ secrets.TF_VAR_DB_PASSWORD }}" \
+          --dry-run=client -o yaml | kubectl apply -f -
+        sed -i "s|REPLACE_ME_IMAGE_URI|${{ env.image_uri }}|g" k8s/deployment.yaml
+        kubectl apply -f k8s/deployment.yaml
+        kubectl rollout restart deployment/userapi
