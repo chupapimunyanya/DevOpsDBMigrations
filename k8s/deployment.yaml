@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: userapi
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: userapi
+  template:
+    metadata:
+      labels:
+        app: userapi
+    spec:
+      containers:
+      - name: userapi
+        image: REPLACE_ME_IMAGE_URI
+        ports:
+        - containerPort: 8080
+        env:
+        - name: ConnectionStrings__DefaultConnection
+          valueFrom:
+            secretKeyRef:
+              name: db-secret
+              key: connection-string
+        resources:
+          limits:
+            memory: "256Mi"
+            cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: userapi-svc
+spec:
+  type: LoadBalancer
+  selector:
+    app: userapi
+  ports:
+  - port: 80
+    targetPort: 8080
